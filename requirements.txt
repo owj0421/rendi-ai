@@ -1,0 +1,6 @@
+openai==1.70.0
+google==3.0.0
+google-cloud-speech==2.31.1
+fastapi==0.115.12
+uvicorn==0.34.2
+starlite==1.51.16

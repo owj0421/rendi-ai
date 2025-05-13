@@ -1,0 +1,11 @@
+version: '0.0.1'
+services:
+  advisor:
+    image: 
+    env_file:
+      - ./env/dev.env
+    volumes:
+      - .../app:/app
+    ports:
+      - "8000:80"
+    command: gunicorn app:app --bind 0.0.0.0:8080
