@@ -11,7 +11,6 @@ from ...models import conversation_models
 
 from ...core import (
     conversation_elements,
-    conversation_memory,
     clients,
     config,
     logger
@@ -36,14 +35,13 @@ class BreaktimeAdvice():
     PROMPT_VER = 1
     LLM_MODEL = "gpt-4.1-nano"
     LLM_RESPONSE_FORMAT = conversation_models.BreaktimeAdviceStringTypeContent | conversation_models.BreaktimeAdviceListTypeContent
-    
-    N_MESSAGES = 5
 
     @classmethod
     def _generate_prompt(
         cls,
-        advice_metadata: dict[str, str],
-        conversation_memory: conversation_memory.ConversationMemory
+        advice_metadata: dict[str, Any],
+        partner_memory: dict[str, list[str]],
+        messages: List[conversation_elements.Message]
     ) -> List[Dict[str, str]]:
         system_message = {
             "role": "system",
@@ -51,12 +49,11 @@ class BreaktimeAdvice():
         }
         user_message = {
             "role": "user",
-            "content": '\n---\n'.join([
-                make_advice_metadata_prompt(advice_metadata),
-                conversation_memory.prompt_conversation_info(),
-                conversation_memory.prompt_partner_memory(),
-                conversation_memory.prompt_messages(n_messages=cls.N_MESSAGES),
-            ])
+            "content": (
+                f"{make_advice_metadata_prompt(advice_metadata)}"
+                f"{make_partner_memory_prompt(partner_memory)}"
+                f"{make_message_prompt(messages)}"
+            )
         }
 
         return [system_message, user_message]
@@ -64,12 +61,14 @@ class BreaktimeAdvice():
     @classmethod
     async def do(
         cls,
-        advice_metadata: dict[str, str],
-        conversation_memory: conversation_memory.ConversationMemory,
+        advice_metadata: dict[str, Any],
+        partner_memory: dict[str, list[str]],
+        messages: List[conversation_elements.Message]
     ) -> conversation_models.BreaktimeAdviceStringTypeContent | conversation_models.BreaktimeAdviceListTypeContent:
         prompt_messages = cls._generate_prompt(
-            advice_metadata=advice_metadata,
-            conversation_memory=conversation_memory
+            advice_metadata, 
+            partner_memory, 
+            messages
         )
         
         response_format = (

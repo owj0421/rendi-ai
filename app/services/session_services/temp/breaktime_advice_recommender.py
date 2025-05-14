@@ -9,7 +9,6 @@ from collections import Counter, defaultdict
 
 from ...core import (
     conversation_elements,
-    conversation_memory,
     clients,
     config,
     logger
@@ -42,14 +41,12 @@ class BreaktimeAdviceRecommenderLLMOutput(BaseModel):
 class BreaktimeAdviceRecommender:
     PROMPT_NAME = "breaktime_advice/ranker"
     PROMPT_VER = 1
-    LLM_MODEL = "gpt-4.1-nano"
-    LLM_RESPONSE_FORMAT = BreaktimeAdviceRecommenderLLMOutput
-    N_MESSAGES = 5
 
     @classmethod
     def _generate_prompt(
         cls,
-        conversation_memory: conversation_memory.ConversationMemory
+        partner_memory: dict[str, list[str]],
+        messages: List[conversation_elements.Message]
     ) -> List[Dict[str, str]]:
         system_message = {
             "role": "system",
@@ -57,12 +54,11 @@ class BreaktimeAdviceRecommender:
         }
         user_message = {
             "role": "user",
-            "content": '\n---\n'.join([
-                make_advice_metadata_list_prompt(advice_utils.ADVICE_METADATAS),
-                conversation_memory.prompt_conversation_info(),
-                conversation_memory.prompt_partner_memory(),
-                conversation_memory.prompt_messages(n_messages=cls.N_MESSAGES),
-            ])
+            "content": (
+                f"{make_advice_metadata_list_prompt(advice_utils.ADVICE_METADATAS)}"
+                f"{make_partner_memory_prompt(partner_memory)}"
+                f"{make_message_prompt(messages)}"
+            )
         }
 
         return [system_message, user_message]
@@ -71,17 +67,21 @@ class BreaktimeAdviceRecommender:
     @classmethod
     async def do(
         cls,
-        conversation_memory: conversation_memory.ConversationMemory,
+        partner_memory: dict[str, list[str]],
+        messages: List[conversation_elements.Message],
         n_consistency: int = 5
     ) -> BreaktimeAdviceRecommenderLLMOutput:
-        prompt_messages = cls._generate_prompt(conversation_memory)
+        prompt_messages = cls._generate_prompt(
+            partner_memory, 
+            messages
+        )
 
         async def single_run():
             try:
                 response = await clients.async_openai_client.beta.chat.completions.parse(
                     messages=prompt_messages,
-                    model=cls.LLM_MODEL,
-                    response_format=cls.LLM_RESPONSE_FORMAT
+                    model="gpt-4.1-nano",
+                    response_format=BreaktimeAdviceRecommenderLLMOutput,
                 )
                 response = response.choices[0].message.parsed
                 return response
@@ -92,7 +92,7 @@ class BreaktimeAdviceRecommender:
 
         results = await asyncio.gather(*(single_run() for _ in range(n_consistency)))
         ranked_lists = [
-            r.final_answer for r in results if isinstance(r, cls.LLM_RESPONSE_FORMAT)
+            r.final_answer for r in results if isinstance(r, BreaktimeAdviceRecommenderLLMOutput)
         ]
         if not ranked_lists:
             raise ValueError("No valid responses received.")

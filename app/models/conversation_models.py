@@ -32,6 +32,24 @@ class DeleteConversationOutput(BaseModel):
     deleted_at: datetime
 
 
+class RealtimeMemo(BaseModel):
+    memo: dict = Field(
+        ..., 
+        description="파트너의 메모",
+        examples=[
+            {
+                "취미/관심사": ["영화", "음악"],
+                "고민": ["직장 스트레스"],
+                "가족/친구": ["형제", "친구"],
+                "직업/학업": ["개발자"],
+                "성격/가치관": ["긍정적"],
+                "이상형/연애관": ["상대방을 존중하는 사람"],
+                "생활습관": ["운동"]
+            }
+        ]
+    )
+
+
 class RealtimeAnalysis(BaseModel):
     partner_engagement_score: float = Field(
         ..., 

@@ -98,12 +98,26 @@ async def test_conversation_full_flow():
         # 2. 여러 번 메시지 추가
         for msg in messages:
             resp = await ac.post(
-                f"/conversation/{conversation_id}/messages",
-                json={"message": msg.dict()}
+            f"/conversation/{conversation_id}/messages",
+            json={"message": msg.dict()}
             )
             logger.info(f"Add message: {msg.content}")
             logger.info(f"↳ Response: {resp.status_code} {resp.text}")
             assert resp.status_code == 200
+
+            # 메시지 추가 후 실시간 메모 호출
+            memo_resp = await ac.post(f"/conversation/{conversation_id}/realtime-memo")
+            logger.info(f"Call realtime-memo after message")
+            logger.info(f"↳ Response: {memo_resp.status_code}")
+            memo = memo_resp.json().get("memo")
+            logger.info("Realtime Memo")
+            if isinstance(memo, dict):
+                for k, v in memo.items():
+                    logger.info(f"  {k}: {v if v else '-'}")
+            else:
+                logger.info(f"↳ {memo}")
+            assert memo_resp.status_code == 200
+            
         
         # 3. 실시간 분석 결과 조회
         resp = await ac.post(f"/conversation/{conversation_id}/breaktime-advice/recommendation")

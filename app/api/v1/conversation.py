@@ -15,6 +15,8 @@ from fastapi import Depends
 from ...core import (
     config,
     conversation_manager,
+    conversation_memory,
+    conversation_elements,
     logger
 )
 from ...utils import (
@@ -39,7 +41,7 @@ from ...models.conversation_models import (
     FinalReport
 )
 
-
+log = logger.get_logger(__name__)
 
 router = APIRouter(
     prefix="/conversation",
@@ -54,8 +56,7 @@ router = APIRouter(
 )
 async def init_conversation(
     conversation_id: str,
-    conversation_manager: conversation_manager.ConversationManager=Depends(conversation_manager.get_conversation_manager),
-    log=Depends(logger.get_logger),
+    conversation_manager: conversation_manager.ConversationManager=Depends(conversation_manager.get_conversation_manager)
 ):
     try:
         conversation_manager.init_conversation(conversation_id=conversation_id)
@@ -81,8 +82,7 @@ async def init_conversation(
 )
 async def delete_conversation(
     conversation_id: str,
-    conversation_manager: conversation_manager.ConversationManager=Depends(conversation_manager.get_conversation_manager),
-    log=Depends(logger.get_logger),
+    conversation_manager: conversation_manager.ConversationManager=Depends(conversation_manager.get_conversation_manager)
 ):
     if not conversation_manager.is_conversation_exists(conversation_id=conversation_id):
         log.warning(f"Conversation not found: {conversation_id}")
@@ -114,8 +114,7 @@ async def delete_conversation(
 async def update_conversation(
     conversation_id: str,
     request: UpdateConversationInput,
-    conversation_manager: conversation_manager.ConversationManager=Depends(conversation_manager.get_conversation_manager),
-    log=Depends(logger.get_logger),
+    conversation_manager: conversation_manager.ConversationManager=Depends(conversation_manager.get_conversation_manager)
 ):
     if not conversation_manager.is_conversation_exists(conversation_id=conversation_id):
         log.warning(f"Conversation not found: {conversation_id}")
@@ -124,26 +123,64 @@ async def update_conversation(
             detail="Conversation not found."
         )
         
-    try:
-        conversation_memory = conversation_manager.get_conversation_memory(conversation_id=conversation_id)
-        await conversation_memory.add_message(message=request.message)
-        sentiment_analysis = await realtime_sentimental_analysis.RealtimeSentimentalAnalysis.do(
-            messages=conversation_memory.get_messages(n_messages=15)
-        )
-        history_utils.update_realtime_analysis(
-            conversation_id=conversation_id,
-            message=request.message,
-            sentiment_analysis=sentiment_analysis
-        )
-        analysis = history_utils.get_realtime_analysis(conversation_id=conversation_id)
-        return analysis
+    mem = conversation_manager.get_conversation_memory(conversation_id=conversation_id)
+    mem.add_message(message=request.message)
     
-    except Exception as exc:
-        log.error(f"Failed to update conversation {conversation_id}: {exc}")
-        raise HTTPException(
-            status_code=status_codes.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update conversation."
+    async def categorize_and_update():
+        if mem.messages[-1].role != "파트너":
+            return
+        categorizer_output = await conversation_memory.PartnerMessageCategorizer.do(
+            conversation_memory=mem
         )
+        if categorizer_output.is_useful_to_remember:
+            updater_output = await conversation_memory.PartnerMemoryUpdater.do(
+                target_category=categorizer_output.target_category,
+                conversation_memory=mem
+            )
+            mem.update_partner_memory(
+                target_category=categorizer_output.target_category,
+                llm_output=updater_output
+            )
+
+    async def analyze_and_update_scores():
+        sentiment_analysis_output = await realtime_sentimental_analysis.RealtimeSentimentalAnalysis.do(
+            conversation_memory=mem
+        )
+        mem.update_scores(
+            message=mem.messages[-1],
+            sentimental_analysis_output=sentiment_analysis_output
+        )
+
+    await asyncio.gather(
+        categorize_and_update(),
+        analyze_and_update_scores()
+    )
+    scores = mem.get_scores()
+    
+    return RealtimeAnalysis(**scores)
+
+
+@router.post(
+    "/{conversation_id}/realtime-memo",
+    response_model=conversation_models.RealtimeMemo,
+    summary="대화 실시간 메모 조회",
+    status_code=status_codes.HTTP_200_OK,
+)
+async def get_realtime_memo(
+    conversation_id: str,
+    conversation_manager: conversation_manager.ConversationManager=Depends(conversation_manager.get_conversation_manager)
+):
+    if not conversation_manager.is_conversation_exists(conversation_id=conversation_id):
+        log.warning(f"Conversation not found: {conversation_id}")
+        raise HTTPException(
+            status_code=status_codes.HTTP_404_NOT_FOUND,
+            detail="Conversation not found."
+        )
+        
+    mem = conversation_manager.get_conversation_memory(conversation_id=conversation_id)
+    
+    return conversation_models.RealtimeMemo(memo=mem.partner_memory)
+    
 
 
 @router.get(
@@ -153,8 +190,7 @@ async def update_conversation(
 )
 async def get_realtime_analysis(
     conversation_id: str,
-    conversation_manager: conversation_manager.ConversationManager=Depends(conversation_manager.get_conversation_manager),
-    log=Depends(logger.get_logger),
+    conversation_manager: conversation_manager.ConversationManager=Depends(conversation_manager.get_conversation_manager)
 ):
     if not conversation_manager.is_conversation_exists(conversation_id=conversation_id):
         log.warning(f"Conversation not found: {conversation_id}")
@@ -163,16 +199,8 @@ async def get_realtime_analysis(
             detail="Conversation not found."
         )
         
-    try:
-        analysis = history_utils.get_realtime_analysis(conversation_id=conversation_id)
-        return analysis
-    
-    except Exception as exc:
-        log.error(f"[RealtimeAnalysis] Failed for conversation_id={conversation_id}: {exc}")
-        raise HTTPException(
-            status_code=status_codes.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve realtime analysis."
-        )
+    analysis = history_utils.get_realtime_analysis(conversation_id=conversation_id)
+    return analysis
 
 
 @router.post(
@@ -184,7 +212,7 @@ async def get_realtime_analysis(
 async def recommend_breaktime_advice(
     conversation_id: str,
     conversation_manager: conversation_manager.ConversationManager=Depends(conversation_manager.get_conversation_manager),
-    log=Depends(logger.get_logger),
+
 ):
     if not conversation_manager.is_conversation_exists(conversation_id=conversation_id):
         log.warning(f"Conversation not found: {conversation_id}")
@@ -193,20 +221,12 @@ async def recommend_breaktime_advice(
             detail="Conversation not found."
         )
 
-    try:
-        conversation_memory = conversation_manager.get_conversation_memory(conversation_id=conversation_id)
-        recommendation = await breaktime_advice_recommender.BreaktimeAdviceRecommender.do(
-            partner_memory=conversation_memory.partner_memory,
-            messages=conversation_memory.get_messages(n_messages=15),
-        )
-        return recommendation
-    
-    except Exception as exc:
-        log.error(f"Failed to recommend breaktime advice for conversation {conversation_id}: {exc}")
-        raise HTTPException(
-            status_code=status_codes.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to recommend breaktime advice."
-        )
+    mem = conversation_manager.get_conversation_memory(conversation_id=conversation_id)
+    recommendation = await breaktime_advice_recommender.BreaktimeAdviceRecommender.do(
+        
+        conversation_memory=mem
+    )
+    return recommendation
 
 
 @router.post(
@@ -220,7 +240,7 @@ async def get_breaktime_advice(
     conversation_id: str,
     advice_id: str,
     conversation_manager: conversation_manager.ConversationManager=Depends(conversation_manager.get_conversation_manager),
-    log=Depends(logger.get_logger),
+
 ):
     if not conversation_manager.is_conversation_exists(conversation_id=conversation_id):
         log.warning(f"Conversation not found: {conversation_id}")
@@ -236,25 +256,17 @@ async def get_breaktime_advice(
             detail="Advice ID not found."
         )
 
-    try:
-        conversation_memory = conversation_manager.get_conversation_memory(conversation_id=conversation_id)
-        advice_metadata = advice_utils.ADVICE_METADATAS.get(advice_id)
-        advice = await breaktime_advice.BreaktimeAdvice.do(
-            advice_metadata=advice_metadata,
-            partner_memory=conversation_memory.partner_memory,
-            messages=conversation_memory.get_messages(n_messages=15)
-        )
-        return BreaktimeAdvice(
-            advice_id=advice_id,
-            advice=advice
-        )
-        
-    except Exception as exc:
-        log.error(f"Failed to get breaktime advice for conversation {conversation_id}, advice {advice_id}: {exc}")
-        raise HTTPException(
-            status_code=status_codes.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get breaktime advice."
-        )
+    advice_metadata = advice_utils.ADVICE_METADATAS[advice_id]
+    mem = conversation_manager.get_conversation_memory(conversation_id=conversation_id)
+    
+    advice = await breaktime_advice.BreaktimeAdvice.do(
+        advice_metadata=advice_metadata,
+        conversation_memory=mem
+    )
+    return BreaktimeAdvice(
+        advice_id=advice_id,
+        advice=advice
+    )
 
 
 @router.post(
@@ -266,7 +278,7 @@ async def get_breaktime_advice(
 async def get_final_report(
     conversation_id: str,
     conversation_manager: conversation_manager.ConversationManager=Depends(conversation_manager.get_conversation_manager),
-    log=Depends(logger.get_logger),
+
 ):
     if not conversation_manager.is_conversation_exists(conversation_id=conversation_id):
         log.warning(f"Conversation not found: {conversation_id}")
@@ -275,14 +287,6 @@ async def get_final_report(
             detail="Conversation not found."
         )
 
-    try:
-        # TODO: 실제 보고서 생성 로직으로 대체
-        dummy_report = "이것은 임의의 최종 보고서입니다."
-        return FinalReport(content=dummy_report)
-    
-    except Exception as exc:
-        log.error(f"Failed to generate final report for conversation {conversation_id}: {exc}")
-        raise HTTPException(
-            status_code=status_codes.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to generate final report."
-        )
+    # TODO: 실제 보고서 생성 로직으로 대체
+    dummy_report = "이것은 임의의 최종 보고서입니다."
+    return FinalReport(content=dummy_report)

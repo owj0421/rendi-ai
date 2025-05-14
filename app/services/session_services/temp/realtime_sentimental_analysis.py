@@ -8,7 +8,6 @@ import async_timeout
 
 from ...core import (
     conversation_elements,
-    conversation_memory,
     clients,
     config,
     logger
@@ -34,13 +33,11 @@ class RealtimeSentimentalAnalysis():
     PROMPT_VER = 1
     LLM_MODEL = "gpt-4.1-nano"
     LLM_RESPONSE_FORMAT = RealtimeSentimentalAnalysisLLMOutput
-    
-    N_MESSAGES = 5
 
     @classmethod
     def _generate_prompt(
         cls,
-        conversation_memory: conversation_memory.ConversationMemory
+        messages: List[conversation_elements.Message]
     ) -> List[Dict[str, str]]:
         system_message = {
             "role": "system",
@@ -48,10 +45,7 @@ class RealtimeSentimentalAnalysis():
         }
         user_message = {
             "role": "user",
-            "content": '\n---\n'.join([
-                conversation_memory.prompt_messages(n_messages=cls.N_MESSAGES),
-                f"### 🔍 분석할 메시지:\n{conversation_memory.messages[-1].to_prompt()}"
-            ])
+            "content": make_last_target_message_prompt(messages)
         }
 
         return [system_message, user_message]
@@ -59,10 +53,12 @@ class RealtimeSentimentalAnalysis():
     @classmethod
     async def do(
         cls,
-        conversation_memory: conversation_memory.ConversationMemory,
+        messages: List[conversation_elements.Message],
         n_consistency: int = 3
     ) -> RealtimeSentimentalAnalysisLLMOutput:
-        prompt_messages = cls._generate_prompt(conversation_memory)
+        prompt_messages = cls._generate_prompt(
+            messages
+        )
 
         async def single_run():
             try:

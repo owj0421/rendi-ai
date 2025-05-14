@@ -1,12 +1,10 @@
 from typing import Dict
+from fastapi import Depends
 
 from . import logger
 from .conversation_memory import ConversationMemory
-from fastapi import Depends
-
 
 log = logger.get_logger(__name__)
-
 
 class ConversationManager:
     def __init__(self) -> None:
@@ -33,7 +31,9 @@ class ConversationManager:
             raise ValueError(f"Conversation memory with ID {conversation_id} does not exist.")
         return self._conversation_memories[conversation_id]
 
+
 conversation_manager = ConversationManager()
+
 
 def get_conversation_manager() -> ConversationManager:
     return conversation_manager
