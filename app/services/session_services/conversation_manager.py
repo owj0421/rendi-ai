@@ -1,7 +1,7 @@
 from typing import Dict
 from fastapi import Depends
 
-from . import logger
+from ...core import logger
 from .conversation_memory import ConversationMemory
 
 log = logger.get_logger(__name__)

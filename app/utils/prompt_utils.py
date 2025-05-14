@@ -2,7 +2,7 @@ import os
 import pathlib
 from typing import Literal
 
-from ..core.conversation_elements import Message
+from ..services.session_services.conversation_elements import Message
 
 PROMPT_DIR = pathlib.Path(__file__).parent.parent / "prompts"
 

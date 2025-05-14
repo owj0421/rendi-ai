@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Union
 from datetime import datetime
 
-from ..core.conversation_elements import Message
+from ..services.session_services.conversation_elements import Message
 
 # --- Request Models ---
 

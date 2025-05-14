@@ -7,11 +7,11 @@ from typing import Dict, List, Any, Literal, Optional
 from dataclasses import dataclass
 from collections import Counter, defaultdict
 
+from . import conversation_elements, conversation_memory
+
 from ...models import conversation_models
 
 from ...core import (
-    conversation_elements,
-    conversation_memory,
     clients,
     config,
     logger

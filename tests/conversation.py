@@ -7,7 +7,7 @@ import logging
 from httpx import AsyncClient
 
 from app.main import app
-from app.core.conversation_elements import Message
+from app.services.session_services.conversation_elements import Message
 
 # 로그 설정
 logging.basicConfig(

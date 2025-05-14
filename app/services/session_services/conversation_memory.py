@@ -5,8 +5,8 @@ from collections import Counter, defaultdict
 import asyncio
 
 from .conversation_elements import Message
-from ..utils.prompt_utils import load_prompt, make_last_target_message_prompt, make_partner_memory_prompt
-from . import clients, logger, config
+from ...utils.prompt_utils import load_prompt, make_last_target_message_prompt, make_partner_memory_prompt
+from ...core import clients, logger, config
 
 
 log = logger.get_logger(__name__)
