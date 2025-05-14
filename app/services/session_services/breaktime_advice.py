@@ -7,81 +7,82 @@ from typing import Dict, List, Any, Literal, Optional
 from dataclasses import dataclass
 from collections import Counter, defaultdict
 
+from ...models import conversation_models
+
 from ...core import (
     conversation_elements,
     clients,
     config,
+    logger
 )
-from ...models.conversation import (
-    analysis_io,
-    advice_io
+from ...models import (
+    conversation_models
 )
-from ...prompts.loader import (
-    load_prompt
+from ...utils.prompt_utils import (
+    load_prompt,
+    make_advice_metadata_prompt,
+    make_last_target_message_prompt,
+    make_message_prompt,
+    make_partner_memory_prompt,
 )
 
 
 class BreaktimeAdvice():
     PROMPT_NAME = "breaktime_advice/advice"
     PROMPT_VER = 1
-    
-    def __init__(
-        self,
-        emoji: str,
-        title: str,
-        description: str,
-        content_type: Literal["string", "list"]
-    ):
-        self.EMOJI = emoji
-        self.TITLE = title
-        self.DESCRIPTION = description
-        self.CONTENT_TYPE = content_type
+    LLM_MODEL = "gpt-4.1-nano"
+    LLM_RESPONSE_FORMAT = conversation_models.StringTypeBreaktimeAdviceContent | conversation_models.ListTypeBreaktimeAdviceContent
 
+    @classmethod
     def _generate_prompt(
-        self,
+        cls,
+        advice_metadata: dict[str, Any],
+        partner_memory: dict[str, list[str]],
         messages: List[conversation_elements.Message]
     ) -> List[Dict[str, str]]:
         system_message = {
             "role": "system",
-            "content": load_prompt(self.PROMPT_NAME, "system", self.PROMPT_VER)
+            "content": load_prompt(cls.PROMPT_NAME, "system", cls.PROMPT_VER)
         }
-        
-        messages_str = "\n".join([message.to_prompt() for message in messages])
-
         user_message = {
             "role": "user",
             "content": (
-                f"Task:\n"
-                f"{self.DESCRIPTION}\n\n"
-                f"Conversation History:\n"
-                f"{messages_str}\n\n"
+                f"{make_advice_metadata_prompt(advice_metadata)}"
+                f"{make_partner_memory_prompt(partner_memory)}"
+                f"{make_message_prompt(messages)}"
             )
         }
 
         return [system_message, user_message]
 
+    @classmethod
     async def do(
-        self,
+        cls,
+        advice_metadata: dict[str, Any],
+        partner_memory: dict[str, list[str]],
         messages: List[conversation_elements.Message]
-    ) -> advice_io.StringTypeBreaktimeAdviceContent | advice_io.ListTypeBreaktimeAdviceContent:
-        
-        prompt_messages = self._generate_prompt(messages)
+    ) -> conversation_models.StringTypeBreaktimeAdviceContent | conversation_models.ListTypeBreaktimeAdviceContent:
+        prompt_messages = cls._generate_prompt(
+            advice_metadata, 
+            partner_memory, 
+            messages
+        )
         
         response_format = (
-            advice_io.StringTypeBreaktimeAdviceContent
-            if self.CONTENT_TYPE == "string" else
-            advice_io.ListTypeBreaktimeAdviceContent
+            conversation_models.StringTypeBreaktimeAdviceContent
+            if advice_metadata['content_type'] == "string" else
+            conversation_models.ListTypeBreaktimeAdviceContent
         )
 
         response = await clients.async_openai_client.beta.chat.completions.parse(
             messages=prompt_messages,
-            model="gpt-4.1-mini",
-            temperature=0.0,
+            model=cls.LLM_MODEL,
             response_format=response_format
         )
-        response_message = response.choices[0].message
-
-        if hasattr(response_message, "refusal") and response_message.refusal:
-            return response_message.refusal
-        else:
-            return response_message.parsed
+        response = response.choices[0].message.parsed
+        
+        if config.settings.DEBUG:
+            logger.logger.warning(f"[{cls.__name__}]")
+            logger.logger.warning("↳ " + f"{response}")
+            
+        return response

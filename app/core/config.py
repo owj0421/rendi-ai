@@ -8,17 +8,11 @@ ENV_PATH = Path(__file__).resolve().parent.parent.parent / "deploy" / "env" / "d
 
 
 class Settings(BaseSettings):
-    
     # Project Paths
     ROOT_DIR: Path = Path(__file__).resolve().parent.parent
     
-    ##################################
-    # BELOW HERE: Environment Variables
-    ##################################
-    
     # Project Configuration
     DEBUG: bool = False
-    
     PROJECT_NAME: Optional[str] = "Dating Advice API"
     PROJECT_DESCRIPTION: Optional[str] = "API for providing real-time advice in dating situations"
     PROJECT_VERSION: Optional[str] = "0.1.0"

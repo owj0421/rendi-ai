@@ -4,27 +4,31 @@ import itertools
 from pydantic import BaseModel, Field
 from typing import Dict, List, Any, Literal, Optional
 from dataclasses import dataclass
+import async_timeout
 
 from ...core import (
     conversation_elements,
     clients,
     config,
+    logger
 )
-from ...models.conversation import (
-    analysis_io
+from ...models import (
+    conversation_models
 )
-from ...prompts.loader import (
-    load_prompt
+from ...utils.prompt_utils import (
+    load_prompt,
+    make_last_target_message_prompt
 )
-    
-    
+
+
 class RealtimeSentimentalAnalysisLLMOutput(BaseModel):
-    final_answer: Literal["긍정", "부정", "중립"]
+    score: Literal[0, 1, 2, 3, 4]
 
 
 class RealtimeSentimentalAnalysis():
     PROMPT_NAME = "realtime_analysis/sentimental_analysis"
     PROMPT_VER = 1
+    LLM_MODEL = "gpt-4.1-nano"
     LLM_RESPONSE_FORMAT = RealtimeSentimentalAnalysisLLMOutput
 
     @classmethod
@@ -36,12 +40,9 @@ class RealtimeSentimentalAnalysis():
             "role": "system",
             "content": load_prompt(cls.PROMPT_NAME, "system", cls.PROMPT_VER)
         }
-        
-        messages_str = "\n".join([message.to_prompt() for message in messages])
-
         user_message = {
             "role": "user",
-            "content": load_prompt(cls.PROMPT_NAME, "user", cls.PROMPT_VER).format(messages=messages_str)
+            "content": make_last_target_message_prompt(messages)
         }
 
         return [system_message, user_message]
@@ -50,35 +51,39 @@ class RealtimeSentimentalAnalysis():
     async def do(
         cls,
         messages: List[conversation_elements.Message],
-        n_consistency: int = 5
+        n_consistency: int = 3
     ) -> RealtimeSentimentalAnalysisLLMOutput:
-        prompt_messages = cls._generate_prompt(messages)
+        prompt_messages = cls._generate_prompt(
+            messages
+        )
 
         async def single_run():
-            response = await clients.async_openai_client.beta.chat.completions.parse(
-                messages=prompt_messages,
-                model="gpt-4.1-nano",
-                response_format=cls.LLM_RESPONSE_FORMAT,
-                temperature=0.0,
-            )
-            response = response.choices[0].message
-
-            if hasattr(response, "refusal") and response.refusal:
-                return response.refusal
-            else:
-                return response.parsed
+            try:
+                response = await clients.async_openai_client.beta.chat.completions.parse(
+                    messages=prompt_messages,
+                    model=cls.LLM_MODEL,
+                    response_format=cls.LLM_RESPONSE_FORMAT,
+                    # temperature=0.0,
+                )
+                response = response.choices[0].message.parsed
+                return response
+            except Exception as e:
+                logger.logger.error(f"Exception in single_run: {e}")
+                return None
 
         results = await asyncio.gather(*(single_run() for _ in range(n_consistency)))
-
-        final_answers = [
-            r.final_answer for r in results if isinstance(r, RealtimeSentimentalAnalysisLLMOutput)
+        scores = [
+            r.score for r in results if isinstance(r, RealtimeSentimentalAnalysisLLMOutput)
         ]
+        if not scores:
+            raise ValueError("No valid responses received.")
 
-        if not final_answers:
-            return results[0] if results else "No response"
-
-        most_common = max(set(final_answers), key=final_answers.count)
+        avg_score = sum(scores) / len(scores)
+        avg_score = int(round(avg_score))
+        output = RealtimeSentimentalAnalysisLLMOutput(score=avg_score)
         
-        return RealtimeSentimentalAnalysisLLMOutput(
-            final_answer=most_common
-        )
+        if config.settings.DEBUG:
+            logger.logger.info(f"[{cls.__name__}]")
+            logger.logger.info("↳ " + f"{output}")
+
+        return output

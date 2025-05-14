@@ -12,16 +12,22 @@ from ...core import (
     clients,
     config,
 )
-from ...models.conversation import (
-    analysis_io
+from ...models import (
+    conversation_models
 )
-from ...prompts.loader import (
-    load_prompt
+from ...utils.prompt_utils import (
+    load_prompt,
+    make_last_target_message_prompt,
+    make_message_prompt,
+    make_advice_metadata_prompt,
+    make_advice_metadata_list_prompt,
+    make_partner_memory_prompt
 )
 from ...utils import (
     advice_utils
 )
 
+MAX_RECOMMENDATIONS = 5
 
 # TODO: 소개팅 경과 시간
 
@@ -36,67 +42,79 @@ class BreaktimeAdviceRecommender:
     @classmethod
     def _generate_prompt(
         cls,
-        messages: List[conversation_elements.Message],
-        max_advice_count: int = 5
+        partner_memory: dict[str, list[str]],
+        messages: List[conversation_elements.Message]
     ) -> List[Dict[str, str]]:
         system_message = {
             "role": "system",
             "content": load_prompt(cls.PROMPT_NAME, "system", cls.PROMPT_VER)
         }
-
-        analysis_str = advice_utils.get_advice_metadata_prompt()
-        
-        messages_str = "\n".join([message.to_prompt() for message in messages])
-        
         user_message = {
             "role": "user",
             "content": (
-                f"{analysis_str}\n\n"
-                "그리고 아래는 대화 메시지입니다:\n"
-                f"{messages_str}\n\n"
-                "위 메시지를 바탕으로, 가장 필요한 카드 id를 중요도 순서대로 정렬해서 리스트로 출력해 주세요."
-                f" (최대 {max_advice_count}개)\n\n"
+                f"{make_advice_metadata_list_prompt(advice_utils.ADVICE_METADATAS)}"
+                f"{make_partner_memory_prompt(partner_memory)}"
+                f"{make_message_prompt(messages)}"
             )
         }
 
         return [system_message, user_message]
 
+
     @classmethod
     async def do(
         cls,
+        partner_memory: dict[str, list[str]],
         messages: List[conversation_elements.Message],
-        n_consistency: int = 5,
-        max_advice_count: int = 5
+        n_consistency: int = 5
     ) -> BreaktimeAdviceRecommenderLLMOutput:
-        
-        prompt_messages = cls._generate_prompt(messages, max_advice_count)
+        prompt_messages = cls._generate_prompt(
+            partner_memory, 
+            messages
+        )
 
         async def single_run():
-            response = await clients.async_openai_client.beta.chat.completions.parse(
-                messages=prompt_messages,
-                model="gpt-4.1-nano",
-                response_format=BreaktimeAdviceRecommenderLLMOutput,
-                # temperature=0.0,
-            )
-            response = response.choices[0].message
-
-            if hasattr(response, "refusal") and response.refusal:
-                return response.refusal
-            else:
-                return response.parsed
+            try:
+                response = await clients.async_openai_client.beta.chat.completions.parse(
+                    messages=prompt_messages,
+                    model="gpt-4.1-nano",
+                    response_format=BreaktimeAdviceRecommenderLLMOutput,
+                )
+                response = response.choices[0].message.parsed
+                return response
+            except Exception as e:
+                if config.settings.DEBUG:
+                    print(f"[{cls.__name__}] Error: {e}")
+                return None
 
         results = await asyncio.gather(*(single_run() for _ in range(n_consistency)))
-
         ranked_lists = [
             r.final_answer for r in results if isinstance(r, BreaktimeAdviceRecommenderLLMOutput)
         ]
         if not ranked_lists:
             raise ValueError("No valid responses received.")
 
-        ranked_lists = sum(ranked_lists, [])
-        counter = Counter(ranked_lists)
-        final_ranking = [item for item, _ in counter.most_common(max_advice_count)]
+        # 각 요소별로 순위의 합을 계산
+        rank_sum = defaultdict(int)
+        count = defaultdict(int)
+        for ranked in ranked_lists:
+            for idx, item in enumerate(ranked):
+                rank_sum[item] += idx + 1  # 순위는 1부터 시작
+                count[item] += 1
 
-        return BreaktimeAdviceRecommenderLLMOutput(
-            final_answer=final_ranking[:max_advice_count]
+        # 순위의 합이 작은 순서대로 정렬
+        sorted_items = sorted(
+            rank_sum.items(),
+            key=lambda x: (x[1], x[0])
         )
+        final_ranking = [item for item, _ in sorted_items[:MAX_RECOMMENDATIONS]]
+
+        output = advice_utils.get_advice_metadata(
+            advice_ids=final_ranking
+        )
+        
+        if config.settings.DEBUG:
+            print(f"[{cls.__name__}]")
+            print("↳ " + f"{output}")
+        
+        return output

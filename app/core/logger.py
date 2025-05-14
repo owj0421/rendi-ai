@@ -25,7 +25,5 @@ def setup_logger():
     dictConfig(logging_config)
 
 setup_logger()
-logger = logging.getLogger()  # root logger 사용
 
-# Example usage:
-# logger.info("Logger is configured for FastAPI.")
+logger = logging.getLogger()  # root logger 사용

@@ -7,19 +7,25 @@ from fastapi import APIRouter
 from fastapi import Depends
 
 from .api.v1 import (
-    # advice,
     conversation,
-    # predecessor
 )
-from .core.config import (
-    settings
+from .core import (
+    config,
+    exceptions
 )
 
+
 app = FastAPI(
-    title=settings.PROJECT_NAME,
-    description=settings.PROJECT_DESCRIPTION,
-    version=settings.PROJECT_VERSION,
+    title=config.settings.PROJECT_NAME,
+    description=config.settings.PROJECT_DESCRIPTION,
+    version=config.settings.PROJECT_VERSION,
 )
+
+
+# Exception handlers
+app.add_exception_handler(Exception, exceptions.general_exception_handler)
+app.add_exception_handler(exceptions.HTTPException, exceptions.http_exception_handler)
+
 
 # CORS settings
 # origins = [
@@ -40,6 +46,7 @@ async def root():
     return {"message": "Hello World"}
     
 # Include routers
-app.include_router(conversation.router, prefix="/api/v1")
-# app.include_router(advice.router, prefix="/api/v1")
-# app.include_router(predecessor.router, prefix="/api/v1")
+app.include_router(
+    conversation.router, 
+    prefix="/api/v1"
+)
