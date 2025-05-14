@@ -27,11 +27,14 @@ from ...utils.prompt_utils import (
 )
 
 
+log = logger.get_logger(__name__)
+
+
 class BreaktimeAdvice():
     PROMPT_NAME = "breaktime_advice/advice"
     PROMPT_VER = 1
     LLM_MODEL = "gpt-4.1-nano"
-    LLM_RESPONSE_FORMAT = conversation_models.StringTypeBreaktimeAdviceContent | conversation_models.ListTypeBreaktimeAdviceContent
+    LLM_RESPONSE_FORMAT = conversation_models.BreaktimeAdviceStringTypeContent | conversation_models.BreaktimeAdviceListTypeContent
 
     @classmethod
     def _generate_prompt(
@@ -61,7 +64,7 @@ class BreaktimeAdvice():
         advice_metadata: dict[str, Any],
         partner_memory: dict[str, list[str]],
         messages: List[conversation_elements.Message]
-    ) -> conversation_models.StringTypeBreaktimeAdviceContent | conversation_models.ListTypeBreaktimeAdviceContent:
+    ) -> conversation_models.BreaktimeAdviceStringTypeContent | conversation_models.BreaktimeAdviceListTypeContent:
         prompt_messages = cls._generate_prompt(
             advice_metadata, 
             partner_memory, 
@@ -69,9 +72,9 @@ class BreaktimeAdvice():
         )
         
         response_format = (
-            conversation_models.StringTypeBreaktimeAdviceContent
+            conversation_models.BreaktimeAdviceStringTypeContent
             if advice_metadata['content_type'] == "string" else
-            conversation_models.ListTypeBreaktimeAdviceContent
+            conversation_models.BreaktimeAdviceListTypeContent
         )
 
         response = await clients.async_openai_client.beta.chat.completions.parse(
@@ -82,7 +85,7 @@ class BreaktimeAdvice():
         response = response.choices[0].message.parsed
         
         if config.settings.DEBUG:
-            logger.logger.warning(f"[{cls.__name__}]")
-            logger.logger.warning("↳ " + f"{response}")
+            log.warning(f"[{cls.__name__}]")
+            log.warning("↳ " + f"{response}")
             
         return response

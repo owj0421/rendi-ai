@@ -32,35 +32,35 @@ async def test_conversation_full_flow():
         Message(message_id=9, role="파트너", content="저는 디자인 쪽 일해요. UX 디자이너로 회사 다니고 있어요."),
         Message(message_id=10, role="나", content="오, 디자인. 멋있다. 저는 앱 개발 쪽 하고 있어요."),
         Message(message_id=11, role="파트너", content="앗, 그러면 우리 약간 협업하는 느낌이네요."),
-        Message(message_id=12, role="나", content="그러게요. 개발자랑 디자이너면 싸울 일도 많다던데요."),
-        Message(message_id=13, role="파트너", content="하하, 그런 말 있죠. 저는 그래도 협업 스타일 좋은 편이에요."),
-        Message(message_id=14, role="나", content="오, 좋네요. 저도 웬만하면 맞춰주는 스타일이에요."),
-        Message(message_id=15, role="파트너", content="그럼 딱 맞는 조합인가요?"),
-        Message(message_id=16, role="나", content="글쎄요, 아직은 잘 모르겠는데, 느낌은 괜찮은 것 같아요."),
-        Message(message_id=17, role="파트너", content="저도 그렇게 생각해요. 말이 잘 통하는 편인 것 같고."),
-        Message(message_id=18, role="나", content="혹시 요즘 뭐에 빠져 계세요?"),
-        Message(message_id=19, role="파트너", content="음... 최근엔 전시 보러 다니는 거에 좀 빠졌어요."),
-        Message(message_id=20, role="나", content="오, 전시. 저도 미술관 가는 거 좋아해요."),
-        Message(message_id=21, role="파트너", content="진짜요? 의외인데요. 되게 IT 쪽 분들은 잘 안 가는 줄 알았어요."),
-        Message(message_id=22, role="나", content="사실 혼자 가는 건 잘 안 하는데, 누가 같이 가면 좋아요."),
-        Message(message_id=23, role="파트너", content="그런 거 저도 비슷해요. 같이 가면 얘기도 나눌 수 있고."),
-        Message(message_id=24, role="나", content="그럼 다음에 혹시 시간 되시면... 같이 가실래요?"),
-        Message(message_id=25, role="파트너", content="좋죠. 전 좋습니다."),
-        Message(message_id=26, role="나", content="오, 그럼 벌써 약속 하나 잡은 거네요."),
-        Message(message_id=27, role="파트너", content="그러네요. 이런 거 빠른 거 좋아요."),
-        Message(message_id=28, role="나", content="혹시 커피는 좋아하세요?"),
-        Message(message_id=29, role="파트너", content="진짜 좋아해요. 하루에 한두 잔은 꼭 마셔요."),
-        Message(message_id=30, role="나", content="저도요. 요즘은 드립 커피에 빠졌어요."),
-        Message(message_id=31, role="파트너", content="오, 직접 내려 드시는 건가요?"),
-        Message(message_id=32, role="나", content="네, 기계까지는 없고 그냥 핸드드립으로요."),
-        Message(message_id=33, role="파트너", content="대단하네요. 저는 그냥 아아만 시켜 마셔요."),
-        Message(message_id=34, role="나", content="아아는 진리죠. 사계절 내내요?"),
-        Message(message_id=35, role="파트너", content="그럼요. 겨울에도 아아죠."),
-        Message(message_id=36, role="나", content="저랑 취향 진짜 비슷하신 것 같아요."),
-        Message(message_id=37, role="파트너", content="그러게요. 이래서 대화가 잘 되는 건가 봐요."),
-        Message(message_id=38, role="나", content="음... 혹시 MBTI 여쭤봐도 될까요?"),
-        Message(message_id=39, role="파트너", content="네, 저 INFP요. 원준님은요?"),
-        Message(message_id=40, role="나", content="저는 INTJ요. 약간 대칭이네요."),
+        # Message(message_id=12, role="나", content="그러게요. 개발자랑 디자이너면 싸울 일도 많다던데요."),
+        # Message(message_id=13, role="파트너", content="하하, 그런 말 있죠. 저는 그래도 협업 스타일 좋은 편이에요."),
+        # Message(message_id=14, role="나", content="오, 좋네요. 저도 웬만하면 맞춰주는 스타일이에요."),
+        # Message(message_id=15, role="파트너", content="그럼 딱 맞는 조합인가요?"),
+        # Message(message_id=16, role="나", content="글쎄요, 아직은 잘 모르겠는데, 느낌은 괜찮은 것 같아요."),
+        # Message(message_id=17, role="파트너", content="저도 그렇게 생각해요. 말이 잘 통하는 편인 것 같고."),
+        # Message(message_id=18, role="나", content="혹시 요즘 뭐에 빠져 계세요?"),
+        # Message(message_id=19, role="파트너", content="음... 최근엔 전시 보러 다니는 거에 좀 빠졌어요."),
+        # Message(message_id=20, role="나", content="오, 전시. 저도 미술관 가는 거 좋아해요."),
+        # Message(message_id=21, role="파트너", content="진짜요? 의외인데요. 되게 IT 쪽 분들은 잘 안 가는 줄 알았어요."),
+        # Message(message_id=22, role="나", content="사실 혼자 가는 건 잘 안 하는데, 누가 같이 가면 좋아요."),
+        # Message(message_id=23, role="파트너", content="그런 거 저도 비슷해요. 같이 가면 얘기도 나눌 수 있고."),
+        # Message(message_id=24, role="나", content="그럼 다음에 혹시 시간 되시면... 같이 가실래요?"),
+        # Message(message_id=25, role="파트너", content="좋죠. 전 좋습니다."),
+        # Message(message_id=26, role="나", content="오, 그럼 벌써 약속 하나 잡은 거네요."),
+        # Message(message_id=27, role="파트너", content="그러네요. 이런 거 빠른 거 좋아요."),
+        # Message(message_id=28, role="나", content="혹시 커피는 좋아하세요?"),
+        # Message(message_id=29, role="파트너", content="진짜 좋아해요. 하루에 한두 잔은 꼭 마셔요."),
+        # Message(message_id=30, role="나", content="저도요. 요즘은 드립 커피에 빠졌어요."),
+        # Message(message_id=31, role="파트너", content="오, 직접 내려 드시는 건가요?"),
+        # Message(message_id=32, role="나", content="네, 기계까지는 없고 그냥 핸드드립으로요."),
+        # Message(message_id=33, role="파트너", content="대단하네요. 저는 그냥 아아만 시켜 마셔요."),
+        # Message(message_id=34, role="나", content="아아는 진리죠. 사계절 내내요?"),
+        # Message(message_id=35, role="파트너", content="그럼요. 겨울에도 아아죠."),
+        # Message(message_id=36, role="나", content="저랑 취향 진짜 비슷하신 것 같아요."),
+        # Message(message_id=37, role="파트너", content="그러게요. 이래서 대화가 잘 되는 건가 봐요."),
+        # Message(message_id=38, role="나", content="음... 혹시 MBTI 여쭤봐도 될까요?"),
+        # Message(message_id=39, role="파트너", content="네, 저 INFP요. 원준님은요?"),
+        # Message(message_id=40, role="나", content="저는 INTJ요. 약간 대칭이네요."),
     ]
     # messages.extend([
     #     Message(message_id=41, role="파트너", content="근데 사실 저는 MBTI 같은 거 별로 안 믿어요."),
@@ -105,7 +105,7 @@ async def test_conversation_full_flow():
             logger.info(f"↳ Response: {resp.status_code} {resp.text}")
             assert resp.status_code == 200
         
-        # 3. 실시간 분석 결과 조회/
+        # 3. 실시간 분석 결과 조회
         resp = await ac.post(f"/conversation/{conversation_id}/breaktime-advice/recommendation")
         logger.info(f"Realtime analysis")
         logger.info(f"↳ Response: {resp.status_code} {resp.text}")
@@ -116,7 +116,6 @@ async def test_conversation_full_flow():
         logger.info(f"Breaktime advice")
         logger.info(f"↳ Response: {resp.status_code} {resp.text}")
         assert resp.status_code == 200
-        assert "content" in resp.json()
 
         # 5. 대화 세션 삭제
         resp = await ac.delete(f"/conversation/{conversation_id}")

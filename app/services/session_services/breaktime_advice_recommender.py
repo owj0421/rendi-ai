@@ -11,6 +11,7 @@ from ...core import (
     conversation_elements,
     clients,
     config,
+    logger
 )
 from ...models import (
     conversation_models
@@ -26,6 +27,8 @@ from ...utils.prompt_utils import (
 from ...utils import (
     advice_utils
 )
+
+logger = logger.get_logger(__name__)
 
 MAX_RECOMMENDATIONS = 5
 

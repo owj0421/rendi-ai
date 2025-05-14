@@ -2,6 +2,11 @@ from typing import Dict
 
 from . import logger
 from .conversation_memory import ConversationMemory
+from fastapi import Depends
+
+
+log = logger.get_logger(__name__)
+
 
 class ConversationManager:
     def __init__(self) -> None:
@@ -12,15 +17,16 @@ class ConversationManager:
 
     def init_conversation(self, conversation_id: str) -> None:
         if self.is_conversation_exists(conversation_id):
-            raise ValueError(f"Conversation with ID {conversation_id} already exists.")
+            log.info(f"Conversation with ID {conversation_id} already exists.")
+            del self._conversation_memories[conversation_id]
         self._conversation_memories[conversation_id] = ConversationMemory()
-        logger.logger.info(f"Conversation initialized with ID: {conversation_id}")
+        log.info(f"Conversation initialized with ID: {conversation_id}")
 
     def delete_conversation(self, conversation_id: str) -> None:
         if not self.is_conversation_exists(conversation_id):
             raise ValueError(f"Conversation memory with ID {conversation_id} does not exist.")
         del self._conversation_memories[conversation_id]
-        logger.logger.info(f"Conversation deleted with ID: {conversation_id}")
+        log.info(f"Conversation deleted with ID: {conversation_id}")
 
     def get_conversation_memory(self, conversation_id: str) -> ConversationMemory:
         if not self.is_conversation_exists(conversation_id):
@@ -28,3 +34,6 @@ class ConversationManager:
         return self._conversation_memories[conversation_id]
 
 conversation_manager = ConversationManager()
+
+def get_conversation_manager() -> ConversationManager:
+    return conversation_manager

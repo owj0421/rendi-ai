@@ -24,18 +24,18 @@ def is_advice_exists(
 
 def get_advice_metadata(
     advice_ids: list[str]
-) -> conversation_models.BreaktimeAdviceRecommendationResponse:
+) -> conversation_models.BreaktimeAdviceRecommendation:
     """
     Returns the metadata for a specific advice ID.
     """
-    output = conversation_models.BreaktimeAdviceRecommendationResponse(
+    output = conversation_models.BreaktimeAdviceRecommendation(
         recommendation=[]
     )
     for id in advice_ids:
         if id not in ADVICE_METADATAS:
             continue
         
-        preview_element = conversation_models.GetBreaktimeAdviceMetadata(
+        preview_element = conversation_models.BreaktimeAdviceMetadata(
             advice_id=id,
             emoji=ADVICE_METADATAS[id]["emoji"],
             title=ADVICE_METADATAS[id]["title"],

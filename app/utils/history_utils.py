@@ -36,7 +36,7 @@ def update_realtime_analysis(
     conversation_id: str,
     message: Message,
     sentiment_analysis: RealtimeSentimentalAnalysisLLMOutput,
-) -> conversation_models.GetRealtimeAnalysisResponse:
+) -> conversation_models.RealtimeAnalysis:
     
     conn = _get_conn()
     c = conn.cursor()
@@ -106,7 +106,7 @@ def update_realtime_analysis(
     
     return True
 
-def get_realtime_analysis(conversation_id: str) -> conversation_models.GetRealtimeAnalysisResponse:
+def get_realtime_analysis(conversation_id: str) -> conversation_models.RealtimeAnalysis:
     conn = _get_conn()
     c = conn.cursor()
     c.execute(
@@ -116,12 +116,12 @@ def get_realtime_analysis(conversation_id: str) -> conversation_models.GetRealti
     row = c.fetchone()
     conn.close()
     if row is None:
-        return conversation_models.GetRealtimeAnalysisResponse(
+        return conversation_models.RealtimeAnalysis(
             partner_engagement_score=0,
             my_engagement_score=0,
             my_talk_share=0
         )
-    return conversation_models.GetRealtimeAnalysisResponse(
+    return conversation_models.RealtimeAnalysis(
         partner_engagement_score=row["partner_engagement"],
         my_engagement_score=row["my_engagement"],
         my_talk_share=row["my_talk_share"]

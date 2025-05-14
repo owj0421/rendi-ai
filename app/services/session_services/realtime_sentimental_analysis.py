@@ -21,6 +21,9 @@ from ...utils.prompt_utils import (
 )
 
 
+log = logger.get_logger(__name__)
+
+
 class RealtimeSentimentalAnalysisLLMOutput(BaseModel):
     score: Literal[0, 1, 2, 3, 4]
 
@@ -68,7 +71,7 @@ class RealtimeSentimentalAnalysis():
                 response = response.choices[0].message.parsed
                 return response
             except Exception as e:
-                logger.logger.error(f"Exception in single_run: {e}")
+                log.error(f"Exception in single_run: {e}")
                 return None
 
         results = await asyncio.gather(*(single_run() for _ in range(n_consistency)))
@@ -83,7 +86,7 @@ class RealtimeSentimentalAnalysis():
         output = RealtimeSentimentalAnalysisLLMOutput(score=avg_score)
         
         if config.settings.DEBUG:
-            logger.logger.info(f"[{cls.__name__}]")
-            logger.logger.info("↳ " + f"{output}")
+            log.info(f"[{cls.__name__}]")
+            log.info("↳ " + f"{output}")
 
         return output

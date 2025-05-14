@@ -8,8 +8,11 @@ from .conversation_elements import Message
 from ..utils.prompt_utils import load_prompt, make_last_target_message_prompt, make_partner_memory_prompt
 from . import clients, logger, config
 
-N_MESSAGES = 5
 
+log = logger.get_logger(__name__)
+
+
+N_MESSAGES = 5
 PARTNER_MEMORY_CATEGORIES = [
     "취미/관심사",      # 취미, 좋아하는 것, 선호하는 활동 등
     "고민",    # 상대방이 털어놓은 고민, 걱정거리, 힘든 점
@@ -75,8 +78,8 @@ class PartnerMessageCategorizer:
         response = response.choices[0].message.parsed
 
         if config.settings.DEBUG:
-            logger.logger.info(f"[{cls.__name__}]")
-            logger.logger.info(f"↳ {response}")
+            log.info(f"[{cls.__name__}]")
+            log.info(f"↳ {response}")
 
         return response
 
@@ -138,8 +141,8 @@ class PartnerMemoryUpdater:
             partner_memory[target_category].append(response.memo)
             
         if config.settings.DEBUG:
-            logger.logger.info(f"[{cls.__name__}]")
-            logger.logger.info("↳ " + f"{make_partner_memory_prompt(partner_memory)}")
+            log.info(f"[{cls.__name__}]")
+            log.info("↳ " + f"{make_partner_memory_prompt(partner_memory)}")
             
         return
 
