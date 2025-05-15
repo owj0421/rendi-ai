@@ -7,7 +7,7 @@ import logging
 from httpx import AsyncClient
 
 from app.main import app
-from app.services.session_services.conversation_elements import Message
+from app.services.elements import Message
 
 # 로그 설정
 logging.basicConfig(
@@ -21,17 +21,17 @@ async def test_conversation_full_flow():
     conversation_id = "test-conv-001"
     messages = [
         Message(message_id=0, role="나", content="안녕하세요. 저는 오원준이라고 해요."),
-        Message(message_id=1, role="파트너", content="안녕하세요. 강유민입니다."),
-        Message(message_id=2, role="나", content="아... 네. 진짜 어색하네요. 이런 자리 처음이라."),
-        Message(message_id=3, role="파트너", content="저도요. 오면서도 계속 고민했어요, 무슨 얘기해야 하나."),
-        Message(message_id=4, role="나", content="근데 생각보다 편하게 말씀하시네요."),
-        Message(message_id=5, role="파트너", content="아, 그런가요? 사실 안 그런 척하는 중이에요."),
-        Message(message_id=6, role="나", content="저도 되게 긴장했는데, 조금씩 풀리는 것 같아요."),
-        Message(message_id=7, role="파트너", content="다행이에요. 저도 말하다 보니까 좀 나아졌어요."),
-        Message(message_id=8, role="나", content="혹시... 지금 무슨 일 하고 계세요?"),
-        Message(message_id=9, role="파트너", content="저는 디자인 쪽 일해요. UX 디자이너로 회사 다니고 있어요."),
-        Message(message_id=10, role="나", content="오, 디자인. 멋있다. 저는 앱 개발 쪽 하고 있어요."),
-        Message(message_id=11, role="파트너", content="앗, 그러면 우리 약간 협업하는 느낌이네요."),
+        # Message(message_id=1, role="파트너", content="안녕하세요. 강유민입니다."),
+        # Message(message_id=2, role="나", content="아... 네. 진짜 어색하네요. 이런 자리 처음이라."),
+        # Message(message_id=3, role="파트너", content="저도요. 오면서도 계속 고민했어요, 무슨 얘기해야 하나."),
+        # Message(message_id=4, role="나", content="근데 생각보다 편하게 말씀하시네요."),
+        # Message(message_id=5, role="파트너", content="아, 그런가요? 사실 안 그런 척하는 중이에요."),
+        # Message(message_id=6, role="나", content="저도 되게 긴장했는데, 조금씩 풀리는 것 같아요."),
+        # Message(message_id=7, role="파트너", content="다행이에요. 저도 말하다 보니까 좀 나아졌어요."),
+        # Message(message_id=8, role="나", content="혹시... 지금 무슨 일 하고 계세요?"),
+        # Message(message_id=9, role="파트너", content="저는 디자인 쪽 일해요. UX 디자이너로 회사 다니고 있어요."),
+        # Message(message_id=10, role="나", content="오, 디자인. 멋있다. 저는 앱 개발 쪽 하고 있어요."),
+        # Message(message_id=11, role="파트너", content="앗, 그러면 우리 약간 협업하는 느낌이네요."),
         # Message(message_id=12, role="나", content="그러게요. 개발자랑 디자이너면 싸울 일도 많다던데요."),
         # Message(message_id=13, role="파트너", content="하하, 그런 말 있죠. 저는 그래도 협업 스타일 좋은 편이에요."),
         # Message(message_id=14, role="나", content="오, 좋네요. 저도 웬만하면 맞춰주는 스타일이에요."),
@@ -68,7 +68,6 @@ async def test_conversation_full_flow():
     #     Message(message_id=43, role="파트너", content="요즘 다들 너무 MBTI에 집착하는 것 같아서 좀 피곤하더라고요."),
     #     Message(message_id=44, role="나", content="아... 그런 의도는 아니었는데, 불편하셨다면 죄송해요."),
     #     Message(message_id=45, role="파트너", content="아니에요. 그냥 제 생각을 말한 거예요."),
-    #     # 부정적인 대화 추가
     #     Message(message_id=46, role="나", content="분위기가 좀 어색해진 것 같네요."),
     #     Message(message_id=47, role="파트너", content="네, 솔직히 좀 불편해졌어요."),
     #     Message(message_id=48, role="나", content="제가 뭔가 실수한 것 같아서 신경 쓰이네요."),
@@ -106,16 +105,16 @@ async def test_conversation_full_flow():
             assert resp.status_code == 200
 
             # 메시지 추가 후 실시간 메모 호출
-            memo_resp = await ac.post(f"/conversation/{conversation_id}/realtime-memo")
-            logger.info(f"Call realtime-memo after message")
+            memo_resp = await ac.post(f"/conversation/{conversation_id}/realtime-memory")
+            logger.info(f"Call realtime-memory after message")
             logger.info(f"↳ Response: {memo_resp.status_code}")
-            memo = memo_resp.json().get("memo")
+            partner_memory = memo_resp.json().get("partner_memory")['content']
             logger.info("Realtime Memo")
-            if isinstance(memo, dict):
-                for k, v in memo.items():
+            if isinstance(partner_memory, dict):
+                for k, v in partner_memory.items():
                     logger.info(f"  {k}: {v if v else '-'}")
             else:
-                logger.info(f"↳ {memo}")
+                logger.info(f"↳ {partner_memory}")
             assert memo_resp.status_code == 200
             
         
@@ -130,10 +129,18 @@ async def test_conversation_full_flow():
         logger.info(f"Breaktime advice")
         logger.info(f"↳ Response: {resp.status_code} {resp.text}")
         assert resp.status_code == 200
+        
+        # 5. 최종 리포트
+        resp = await ac.post(f"/conversation/{conversation_id}/final-report")
+        logger.info(f"Final report")
+        logger.info(f"↳ Response: {resp.status_code} {resp.text}")
+        assert resp.status_code == 200
 
-        # 5. 대화 세션 삭제
+        # 6. 대화 세션 삭제
         resp = await ac.delete(f"/conversation/{conversation_id}")
         logger.info(f"Delete conversation")
         logger.info(f"↳ Response: {resp.status_code} {resp.text}")
-        assert resp.status_code == 204
+        assert resp.status_code == 200
 
+        # 종료
+        logger.info("Test completed successfully.")
