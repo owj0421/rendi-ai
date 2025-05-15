@@ -77,7 +77,7 @@ class RealtimeSentimentalAnalyzer:
     """
     실시간 감정 분석을 수행하는 클래스.
     """
-    PROMPT_NAME = "realtime_analysis/sentimental_analysis"
+    PROMPT_NAME = "score/sentimental_analysis"
     PROMPT_VER = 1
     LLM_MODEL = "gpt-4.1-nano"
 

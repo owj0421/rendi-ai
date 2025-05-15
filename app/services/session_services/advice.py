@@ -28,6 +28,7 @@ class AdviceMetadata(BaseModel):
     emoji: str
     title: str
     description: str
+    prompt_instruction: str
     
 
 class AdviceRecommendation(BaseModel):
@@ -44,7 +45,7 @@ class Advice(BaseModel):
     
 # ========== Constants =========
 
-N_MESSAGES = 5
+N_MESSAGES = 15
 MAX_RECOMMENDATIONS = 5
 
 ADVICE_METADATAS_PATH = pathlib.Path(__file__).parent.parent.parent / "advice_metadatas.json"
@@ -95,35 +96,41 @@ def is_advice_exists(
     """
     return advice_id in ADVICE_METADATAS
 
-def prompt_advice_metadata(advice_id: str):
+def advice_metadata_to_str(
+    advice_id: str
+) -> str:
     advice_metadata = get_advice_metadata(advice_id)
+    advice_str = (
+        f"ID: {advice_metadata.advice_id}\n"
+        f"- 제목: {advice_metadata.emoji} {advice_metadata.title}\n"
+        f"- 설명: {advice_metadata.description}\n"
+        f"- 요구사항: {advice_metadata.prompt_instruction}\n"
+    )
     
-    advice_section = "아래는 '나'가 소개팅 도중 요청한 조언 정보입니다.\n"
-    advice_section += "----------------------\n"
-    advice_section += f"ID: {advice_metadata.advice_id}\n"
-    advice_section += f"이모지: {advice_metadata.emoji}\n"
-    advice_section += f"제목: {advice_metadata.title}\n"
-    advice_section += f"설명: {advice_metadata.description}"
-    advice_section += "\n----------------------\n\n"
+    return advice_str
+
+def prompt_advice_metadata(advice_id: str):
+    advice_section = (
+        f"### 💡 '나'가 소개팅 도중 요청한 조언:\n"
+        "----------------------\n"
+        f"{advice_metadata_to_str(advice_id)}"
+        "----------------------\n\n"
+    )
 
     return advice_section
 
 def prompt_advice_metadata_list():
-    advice_section = "아래는 '나'가 소개팅 도중 요청한 조언 정보입니다.\n"
+    advice_section = "### 💡 '나'에게 소개팅 도중 제공 가능한 조언 목록:\n"
     advice_section += "----------------------\n"
-    for advice_metadata in ADVICE_METADATAS.values():
-        advice_section += f"ID: {advice_metadata.advice_id}\n"
-        advice_section += f"이모지: {advice_metadata.emoji}\n"
-        advice_section += f"제목: {advice_metadata.title}\n"
-        advice_section += f"설명: {advice_metadata.description}\n"
-        advice_section += "----------------------\n\n"
+    advice_section += '\n'.join([advice_metadata_to_str(advice_id) for advice_id in ADVICE_METADATAS])
+    advice_section += "----------------------\n\n"
 
     return advice_section
 
 # ========= BreaktimeAdviceGenerator =========
 
 class BreaktimeAdviceGenerator():
-    PROMPT_NAME = "breaktime_advice/advice"
+    PROMPT_NAME = "advice/advice_generator"
     PROMPT_VER = 1
     LLM_MODEL = "gpt-4.1-nano"
 
@@ -163,7 +170,7 @@ class BreaktimeAdviceGenerator():
 # ========= BreaktimeAdviceRecommendationGenerator =========
 
 class BreaktimeAdviceRecommender:
-    PROMPT_NAME = "breaktime_advice/ranker"
+    PROMPT_NAME = "advice/advice_recommender"
     PROMPT_VER = 1
     LLM_MODEL = "gpt-4.1-nano"
 

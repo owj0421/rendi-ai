@@ -11,7 +11,7 @@ log = logger.get_logger(__name__)
 
 # === Constants ===
 
-N_MESSAGES = 5
+N_MESSAGES = 15
 PARTNER_MEMORY_CATEGORIES = [
     "취미/관심사",
     "고민",
