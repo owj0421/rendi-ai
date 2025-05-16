@@ -105,17 +105,18 @@ async def test_conversation_full_flow():
             assert resp.status_code == 200
 
             # 메시지 추가 후 실시간 메모 호출
-            memo_resp = await ac.post(f"/conversation/{conversation_id}/realtime-memory")
+            resp = await ac.post(f"/conversation/{conversation_id}/realtime-memory")
             logger.info(f"Call realtime-memory after message")
-            logger.info(f"↳ Response: {memo_resp.status_code}")
-            partner_memory = memo_resp.json().get("partner_memory")['content']
-            logger.info("Realtime Memo")
-            if isinstance(partner_memory, dict):
-                for k, v in partner_memory.items():
-                    logger.info(f"  {k}: {v if v else '-'}")
-            else:
-                logger.info(f"↳ {partner_memory}")
-            assert memo_resp.status_code == 200
+            logger.info(f"↳ Response: {resp.status_code} {resp.text}")
+            # partner_memory = memo_resp.json().get("partner_memory")['content']
+            # logger.info("Realtime Memo")
+            
+            # if isinstance(partner_memory, dict):
+            #     for k, v in partner_memory.items():
+            #         logger.info(f"  {k}: {v if v else '-'}")
+            # else:
+            #     logger.info(f"↳ {partner_memory}")
+            assert resp.status_code == 200
             
         
         # 3. 실시간 분석 결과 조회

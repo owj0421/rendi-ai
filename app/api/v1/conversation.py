@@ -23,6 +23,7 @@ from ...services.session_services import (
     advice as advice_service,
     memory as memory_service,
     score as score_service,
+    final_report as final_report_service,
 )
 
 log = logger.get_logger(__name__)
@@ -239,8 +240,10 @@ async def get_final_report(
         )
 
     # TODO: 실제 보고서 생성 로직으로 대체
-    dummy_report = "이것은 임의의 최종 보고서입니다."
+    final_report = await final_report_service.write_final_report_pipeline(
+        conversation_memory=conversation_manager.get_conversation_memory(conversation_id=conversation_id)
+    )
     
     return GetFinalReportOutput(
-        final_report=dummy_report
+        final_report=final_report
     )

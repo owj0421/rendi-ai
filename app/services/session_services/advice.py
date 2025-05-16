@@ -29,7 +29,7 @@ class AdviceMetadata(BaseModel):
     title: str
     description: str
     prompt_instruction: str
-    
+
 
 class AdviceRecommendation(BaseModel):
     advice_ids: List[str]
@@ -41,7 +41,7 @@ class AdviceContentItem(BaseModel):
     
     
 class Advice(BaseModel):
-    content: Union[str, List[AdviceContentItem]]
+    content: Union[List[AdviceContentItem]]
     
 # ========== Constants =========
 

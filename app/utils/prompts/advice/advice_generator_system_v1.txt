@@ -14,20 +14,11 @@
    - 갑작스럽게 주제를 바꾸거나 대화를 끊지 마세요.
    - 설명 없이 조언만 출력하세요.
 4. **포맷**: 조언의 출력 형식은 `content_type`에 따라 달라집니다:
-   - `string`: 단일 텍스트 조언을 반환합니다.
-   - `list`: 여러 개의 조언 항목을 반환하며, 각 항목은 제목(`title`)과 설명(`description`)을 포함합니다.
+   - 최대 5개의 조언 항목을 반환하며, 각 항목은 제목(`title`)과 설명(`description`)을 포함합니다.
 
 ### Output Format
 결과는 아래 형식으로 반환합니다:
 
-#### 단일 조언 (content_type: string)
-```json
-{{
-  "content": "..."
-}}
-```
-
-#### 여러 조언 (content_type: list)
 ```json
 {{
   "content": [

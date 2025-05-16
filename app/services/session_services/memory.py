@@ -13,6 +13,7 @@ log = logger.get_logger(__name__)
 
 N_MESSAGES = 15
 PARTNER_MEMORY_CATEGORIES = [
+    "이름/나이",
     "취미/관심사",
     "고민",
     "가족/친구",
@@ -38,6 +39,7 @@ class PartnerMemoryUpdateInstruction(BaseModel):
     """
     should_update: bool
     category: Optional[Literal[
+        "이름/나이",
         '취미/관심사',
         '고민',
         '가족/친구',
@@ -50,7 +52,34 @@ class PartnerMemoryUpdateInstruction(BaseModel):
     
 
 class PartnerMemory(BaseModel):
-    content: Dict[str, List[str]]
+    content: Dict[
+        Literal[
+            "이름/나이",
+            "취미/관심사",
+            "고민",
+            "가족/친구",
+            "직업/학업",
+            "성격/가치관",
+            "이상형/연애관",
+            "생활습관",
+        ],
+        List[str],
+    ]
+    
+    
+def partner_memory_to_str(partner_memory, add_prefix=True) -> str:
+    if add_prefix:
+        return_str = "### 📝 파트너에 대한 메모:\n"
+    else:
+        return_str = ""
+    
+    for category, memos in partner_memory.content.items():
+        if not memos:
+            continue
+        return_str += f"{category}:\n"
+        for idx, memo in enumerate(memos):
+            return_str += f"- {memo}\n"# f"- {idx}: {memo}\n"
+    return return_str
     
 
 # === ConversationMemory ===
@@ -114,14 +143,7 @@ class ConversationMemory:
         return prompt
 
     def prompt_partner_memory(self) -> str:
-        prompt = "### 📝 파트너에 대한 메모:\n"
-        for category, memos in self.partner_memory.content.items():
-            if not memos:
-                continue
-            prompt += f"<{category}>와 관련된 메모:\n"
-            for idx, memo in enumerate(memos):
-                prompt += f"- {idx}: {memo}\n"
-        return prompt
+        return partner_memory_to_str(self.partner_memory)
         
 
 class PartnerMemoryRelevanceClassifier:
